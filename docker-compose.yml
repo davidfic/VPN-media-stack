@@ -1,0 +1,110 @@
+version: '3'
+services:
+  traefik:
+    image: traefik
+    command:
+      - --api
+      - --docker
+    ports:
+      - "80:80"
+      - "8089:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  radarr:
+    image: "linuxserver/radarr"
+    container_name: "radarr"
+    #    network_mode: host
+    environment:
+        - PGID=0
+        - PUID=0
+        - TZ=America/New_York
+    volumes:
+        - "/var/radarr/config:/config"
+        - "/var/radarr/downloads:/downloads"
+        - "/var/radarr/movies:/movies"
+    ports:
+      - "7878:7878"
+    labels:
+      - "traefik.tags=radarr"
+      - "traefik.backend=radarr"
+      - "traefik.frontend.rule=Host:radarr"
+    restart: always
+  sonarr:
+    image: "linuxserver/sonarr"
+    container_name: "sonarr"
+    #network_mode: host
+    environment: 
+       - PGID=0
+       - PUID=0
+       - TZ=America/New_York
+    volumes: 
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/var/sonarr/config:/config"
+      - "/var/sonarr/downloads:/downloads"
+      - "/var/sonarr/tv:/tv"
+    ports:
+      - "8989:8989"
+    labels:
+      - "traefik.tags=sonarr"
+      - "traefik.backend=sonarr"
+      - "traefik.frontend.rule=Host:sonarr"
+    restart: always
+  transmission:
+    image: "linuxserver/transmission"
+    container_name: "transmission"
+    #network_mode: host
+    environment: 
+       - PGID=0
+       - PUID=0
+    volumes:
+      - "/var/transmission/config:/config"
+      - "/var/transmission/downloads:/downloads"
+      - "/var/transmission/watch:/watch"
+    ports:
+      - "9091:9091"
+      - "51413:51413"
+      - "51413:51413/udp"
+    labels:
+      - "traefik.tags=transmision"
+      - "traefik.backend=transmission"
+      - "traefik.frontend.rule=Host:transmission"
+      - "traefik.port=9091"
+    restart: always
+    #  watchtower:
+    #    image: v2tec/watchtower
+    #    container_name: "watchtower"
+    #    volumes:
+    #      - /var/run/docker.sock:/var/run/docker.sock
+    #      - /root/.docker/config.json:/config.json
+    #    command: --interval 30
+    #    restart: always
+  pihole:
+    image: diginc/pi-hole
+    container_name: pihole
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "81:80/tcp"
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - ServerIP=192.168.2.5
+      - WEBPASSWORD=password
+      - PGID=0
+      - PUID=0
+      - TZ=America/New_York
+      - DNS1="192.168.2.1" 
+      - DNS2="1.1.1.1"
+    volumes:
+      - '/var/pihole/pihole/:/etc/pihole/'
+      - '/var/pihole/dnsmasq.d/:/etc/dnsmasq.d/'
+    labels:
+      - "traefik.tags=pihole"
+      - "traefik.backend=sol:81/admin"
+      - "traefik.frontend.rule=Host:pihole"
+        #      - "traefik.frontend.rule=PathPrefixStrip:/pihole"
+      - "traefik.enable=true"
+      - "traekik.port=81"
+    dns: 1.1.1.1
+    restart: always
+ 
