@@ -70,14 +70,14 @@ services:
       - "traefik.frontend.rule=Host:transmission"
       - "traefik.port=9091"
     restart: always
-    #  watchtower:
-    #    image: v2tec/watchtower
-    #    container_name: "watchtower"
-    #    volumes:
-    #      - /var/run/docker.sock:/var/run/docker.sock
-    #      - /root/.docker/config.json:/config.json
-    #    command: --interval 30
-    #    restart: always
+  watchtower:
+    image: v2tec/watchtower
+    container_name: "watchtower"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.docker/config.json:/config.json
+    command: --interval 30
+    restart: always
   pihole:
     image: diginc/pi-hole
     container_name: pihole
@@ -102,9 +102,12 @@ services:
       - "traefik.tags=pihole"
       - "traefik.backend=sol:81/admin"
       - "traefik.frontend.rule=Host:pihole"
-        #      - "traefik.frontend.rule=PathPrefixStrip:/pihole"
+      - "traefik.frontend.rule=HostRegexp:{catchall:.*}"
+      - "traefik.frontend.priority=1"
+      - "traefik.protocol=http"
       - "traefik.enable=true"
-      - "traekik.port=81"
+      - "traefik.frontend.entryPoints=http"
+      - "traekik.port=80"
     dns: 1.1.1.1
     restart: always
  
