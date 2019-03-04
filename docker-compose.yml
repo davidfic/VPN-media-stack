@@ -14,7 +14,6 @@ services:
   radarr:
     image: "linuxserver/radarr"
     container_name: "radarr"
-    #    network_mode: host
     environment:
         - PGID=0
         - PUID=0
@@ -22,7 +21,7 @@ services:
     volumes:
         - "/var/radarr/config:/config"
         - "/var/radarr/downloads:/downloads"
-        - "/var/radarr/movies:/movies"
+        - "/var/media/adult-movies:/movies"
     ports:
       - "7878:7878"
     labels:
@@ -33,7 +32,6 @@ services:
   sonarr:
     image: "linuxserver/sonarr"
     container_name: "sonarr"
-    #network_mode: host
     environment: 
        - PGID=0
        - PUID=0
@@ -42,79 +40,16 @@ services:
       - "/etc/localtime:/etc/localtime:ro"
       - "/var/sonarr/config:/config"
       - "/var/sonarr/downloads:/downloads"
-      - "/var/sonarr/tv:/tv"
+      - "/var/media/adult-tv:/tv"
     ports:
       - "8989:8989"
     labels:
       - "traefik.tags=sonarr"
       - "traefik.backend=sonarr"
       - "traefik.frontend.rule=Host:sonarr"
-    restart: always
-  transmission:
-    image: "linuxserver/transmission"
-    container_name: "transmission"
-    #network_mode: host
-    environment: 
-       - PGID=0
-       - PUID=0
-    volumes:
-      - "/var/transmission/config:/config"
-      - "/var/transmission/downloads:/downloads"
-      - "/var/transmission/watch:/watch"
-    ports:
-      - "9091:9091"
-      - "51413:51413"
-      - "51413:51413/udp"
-    labels:
-      - "traefik.tags=transmision"
-      - "traefik.backend=transmission"
-      - "traefik.frontend.rule=Host:transmission"
-      - "traefik.port=9091"
-    restart: always
-  watchtower:
-    image: v2tec/watchtower
-    container_name: "watchtower"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /root/.docker/config.json:/config.json
-    command: --interval 30
-    restart: always
-  pihole:
-    image: diginc/pi-hole
-    container_name: pihole
-    ports:
-      - "53:53/tcp"
-      - "53:53/udp"
-      - "81:80/tcp"
-    cap_add:
-      - NET_ADMIN
-    environment:
-      - ServerIP=192.168.2.5
-      - WEBPASSWORD=password
-      - PGID=0
-      - PUID=0
-      - TZ=America/New_York
-      - DNS1="192.168.2.1" 
-      - DNS2="1.1.1.1"
-    volumes:
-      - '/var/pihole/pihole/:/etc/pihole/'
-      - '/var/pihole/dnsmasq.d/:/etc/dnsmasq.d/'
-    labels:
-      - "traefik.tags=pihole"
-      - "traefik.backend=sol:81/admin"
-      - "traefik.frontend.rule=Host:pihole"
-      - "traefik.frontend.rule=HostRegexp:{catchall:.*}"
-      - "traefik.frontend.priority=1"
-      - "traefik.protocol=http"
-      - "traefik.enable=true"
-      - "traefik.frontend.entryPoints=http"
-      - "traekik.port=80"
-    dns: 1.1.1.1
-    restart: always
   jackett:
     image: "linuxserver/jackett"
     container_name: "jackett"
-    #    network_mode: host
     environment:
         - PGID=0
         - PUID=0
@@ -129,63 +64,14 @@ services:
       - "traefik.backend=jackett"
       - "traefik.frontend.rule=Host:jackett"
     restart: always
-  plex:
-    image: plexinc/pms-docker:latest
-    container_name: plex
+  watchtower:
+    image: "v2tec/watchtower"
+    container_name: "watchtower"
     environment:
-      - PLEX_CLAIM=claim-dydU4b8bpFiEVxpHj2jD
-      - ADVERTISE_IP="https://plex/"
-      - PLEX_UID=0
-      - PLEX_GID=0
+        - PGID=0
+        - PUID=0
+        - TZ=America/New_York
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/plex/media/plex/config/:/config
-      - /tmp/transcode/:/transcode
-      - /var/adult-movies/:/data/adult-movies
-      - /var/kid-movies/:/data/kid-movies
-      - /var/adult-tv/:/data/adult-tv
-      - /var/kid-tv/:/data/kid-tv
-    labels:
-      - "traefik.enable=true"
-      - "traefik.backend=plex"
-        #      - "traefik.docker.network=web"
-      - "traefik.frontend.rule=Host:plex"
-      - "traefik.tags=plex"
-      - "traefik.port=32400"
-    restart: always
-  plexpy:
-    image: linuxserver/plexpy:latest
-    container_name: plexpy
-    environment:
-      - PUID=0
-      - PGID=0
-    volumes:
-      - /var/plexpy/media/plexpy:/config
-      - /var/plexpy/media/plex/config/Library/Application\ Support/Plex\ Media\ Server/Logs:/logs:ro
-    labels:
-      - "traefik.enable=true"
-      - "traefik.backend=plexpy"
-      - "traefik.frontend.rule=Host:plexpy"
-      - "traefik.port=8181"
-      - "traefik.tags=plexpy"
-        #      - "traefik.docker.network=web"
-    depends_on:
-      - plex
-    restart: always
-  tautulli:
-    image: tautulli/tautulli
-    container_name: tautulli
-    environment:
-      - PUID=0
-      - PGID=0
-      - TZ=America/New_York
-    volumes:
-      - /var/tautulli/config:/config
-      - /var/tautulli/logs:/logs:ro
-    labels:
-      - "traefik.enable=true"
-      - "traefik.backend=tautulli"
-      - "traefik.frontend.rule=Host:tautulli"
-      - "traefik.port=8181"
-      - "traefik.tags=tautulli"
+        - "/var/run/docker.sock:/var/run/docker.sock"
+        - "/root/.docker/config.json:/config.json"
     restart: always
