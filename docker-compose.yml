@@ -2,14 +2,18 @@ version: '3'
 services:
   traefik:
     image: traefik
+    container_name: "traefik"
     command:
       - --api
       - --docker
     ports:
       - "80:80"
+      - "443:443"
       - "8089:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./certs/:/certs/
+      - ./traefik.toml:/traefik.toml
     restart: always
   radarr:
     image: "linuxserver/radarr"
@@ -75,3 +79,20 @@ services:
         - "/var/run/docker.sock:/var/run/docker.sock"
         - "/root/.docker/config.json:/config.json"
     restart: always
+  ombi:
+    image: linuxserver/ombi
+    container_name: ombi
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - BASE_URL=/ombi #optional
+    volumes:
+      - /path/to/appdata/config:/config
+    ports:
+      - 3579:3579
+    labels:
+      - "traefik.tags=ombi"
+      - "traefik.backend=ombi"
+      - "traefik.frontend.rule=Host:ombi"
+    restart: unless-stopped
