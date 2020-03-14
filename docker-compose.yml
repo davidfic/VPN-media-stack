@@ -4,8 +4,8 @@ services:
     image: traefik
     container_name: "traefik"
     command:
-      - --api
-      - --docker
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
       - "443:443"
@@ -77,7 +77,7 @@ services:
         - TZ=America/New_York
     volumes:
         - "/var/run/docker.sock:/var/run/docker.sock"
-        - "/root/.docker/config.json:/config.json"
+        - "/home/davidfic/.docker/config.json:/config.json"
     restart: always
   ombi:
     image: linuxserver/ombi
@@ -88,11 +88,22 @@ services:
       - TZ=America/New_York
       - BASE_URL=/ombi #optional
     volumes:
-      - /path/to/appdata/config:/config
+      - /opt/dockerconfigs/ombi:/config
     ports:
       - 3579:3579
-    labels:
-      - "traefik.tags=ombi"
-      - "traefik.backend=ombi"
-      - "traefik.frontend.rule=Host:ombi"
+    restart: unless-stopped
+  bazarr:
+    image: linuxserver/bazarr
+    container_name: bazarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - UMASK_SET=022 #optional
+    volumes:
+      - /opt/dockerconfigs/bazarr/config:/config
+      - /var/media/adult-movies:/movies
+      - /var/media/adult-tv:/tv
+    ports:
+      - 6767:6767
     restart: unless-stopped
