@@ -2,14 +2,18 @@ version: '3'
 services:
   traefik:
     image: traefik:v1.7.16
+    container_name: "traefik"
     command:
-      - --api
-      - --docker
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
+      - "443:443"
       - "8089:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./certs/:/certs/
+      - ./traefik.toml:/traefik.toml
     restart: always
   radarr:
     image: "linuxserver/radarr"
@@ -64,3 +68,42 @@ services:
       - "traefik.backend=jackett"
       - "traefik.frontend.rule=Host:jackett"
     restart: always
+  watchtower:
+    image: "v2tec/watchtower"
+    container_name: "watchtower"
+    environment:
+        - PGID=0
+        - PUID=0
+        - TZ=America/New_York
+    volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+        - "/home/davidfic/.docker/config.json:/config.json"
+    restart: always
+  ombi:
+    image: linuxserver/ombi
+    container_name: ombi
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - BASE_URL=/ombi #optional
+    volumes:
+      - /opt/dockerconfigs/ombi:/config
+    ports:
+      - 3579:3579
+    restart: unless-stopped
+  bazarr:
+    image: linuxserver/bazarr
+    container_name: bazarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - UMASK_SET=022 #optional
+    volumes:
+      - /opt/dockerconfigs/bazarr/config:/config
+      - /var/media/adult-movies:/movies
+      - /var/media/adult-tv:/tv
+    ports:
+      - 6767:6767
+    restart: unless-stopped
