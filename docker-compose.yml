@@ -1,72 +1,85 @@
-version: '3'
+---
+version: "3.7"
 services:
+  radarr:
+    image: linuxserver/radarr
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - UMASK_SET=022 #optional
+    volumes:
+      - "/var/radarr/config:/config"
+      - "/var/radarr/downloads:/downloads"
+      - "/var/media/adult-movies:/movies"
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr`)"
+      - "traefik.http.services.radarr.LoadBalancer.server.Port=7878"
+      - "traefik.http.routers.radarr.service=radarr"
   traefik:
-    image: traefik:v1.7.16
+    image: "traefik:v2.2"
     container_name: "traefik"
-    command:
-      - "--providers.docker=true"
-      - "--entrypoints.web.address=:80"
+    command: # CLI arguments
+      - --global.checkNewVersion=true
+      - --entryPoints.http.address=:80
+      - --entryPoints.traefik.address=:8080
+      - --api=true
+      - --api.insecure=true
+      - --serversTransport.insecureSkipVerify=true
+      - --log=true
+      - --log.level=DEBUG # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - --accessLog=true
+      - --accessLog.filePath=/traefik.log
+      - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
+      - --accessLog.filters.statusCodes=400-499
+      - --providers.docker=true
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+        #- --providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service" }}.$DOMAINNAME`)
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.network=t2_proxy
     ports:
       - "80:80"
-      - "443:443"
-      - "8089:8080"
+      - "8080:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./certs/:/certs/
-      - ./traefik.toml:/traefik.toml
-    restart: always
-  radarr:
-    image: "linuxserver/radarr"
-    container_name: "radarr"
-    environment:
-        - PGID=0
-        - PUID=0
-        - TZ=America/New_York
-    volumes:
-        - "/var/radarr/config:/config"
-        - "/var/radarr/downloads:/downloads"
-        - "/var/media/adult-movies:/movies"
-    ports:
-      - "7878:7878"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
     labels:
-      - "traefik.tags=radarr"
-      - "traefik.backend=radarr"
-      - "traefik.frontend.rule=Host:radarr"
-    restart: always
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`monitor.example.com`)"
   sonarr:
     image: "linuxserver/sonarr"
     container_name: "sonarr"
-    environment: 
+    environment:
        - PGID=0
        - PUID=0
        - TZ=America/New_York
-    volumes: 
+    volumes:
       - "/etc/localtime:/etc/localtime:ro"
       - "/var/sonarr/config:/config"
       - "/var/sonarr/downloads:/downloads"
       - "/var/media/adult-tv:/tv"
-    ports:
-      - "8989:8989"
     labels:
-      - "traefik.tags=sonarr"
-      - "traefik.backend=sonarr"
-      - "traefik.frontend.rule=Host:sonarr"
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr`)"
+      - "traefik.http.services.sonarr.LoadBalancer.server.Port=8989"
+      - "traefik.http.routers.sonarr.service=sonarr"
   jackett:
     image: "linuxserver/jackett"
     container_name: "jackett"
     environment:
-        - PGID=0
-        - PUID=0
+        - PGID=1000
+        - PUID=1000
         - TZ=America/New_York
     volumes:
         - "/var/jackett/config:/config"
         - "/var/jackett/downloads:/downloads"
-    ports:
-      - "9117:9117"
     labels:
-      - "traefik.tags=jackett"
-      - "traefik.backend=jackett"
-      - "traefik.frontend.rule=Host:jackett"
+      - "traefik.enable=true"
+      - "traefik.http.routers.jackett.rule=Host(`jackett`)"
+      - "traefik.http.services.jackett.LoadBalancer.server.Port=9117"
+      - "traefik.http.routers.jackett.service=jackett"
     restart: always
   watchtower:
     image: "v2tec/watchtower"
@@ -79,19 +92,10 @@ services:
         - "/var/run/docker.sock:/var/run/docker.sock"
         - "/home/davidfic/.docker/config.json:/config.json"
     restart: always
-  ombi:
-    image: linuxserver/ombi
-    container_name: ombi
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
-      - BASE_URL=/ombi #optional
-    volumes:
-      - /opt/dockerconfigs/ombi:/config
-    ports:
-      - 3579:3579
-    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.watchtower.rule=Host(`watchtower`)"
+      - "traefik.http.routers.watchtower.service=watchtower"
   bazarr:
     image: linuxserver/bazarr
     container_name: bazarr
@@ -101,9 +105,71 @@ services:
       - TZ=America/New_York
       - UMASK_SET=022 #optional
     volumes:
-      - /opt/dockerconfigs/bazarr/config:/config
-      - /var/media/adult-movies:/movies
-      - /var/media/adult-tv:/tv
-    ports:
-      - 6767:6767
+      - "/opt/dockerconfigs/bazarr/config:/config"
+      - "/var/media/adult-movies:/movies"
+      - "/var/media/adult-tv:/tv"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr.rule=Host(`bazarr`)"
+      - "traefik.http.routers.bazarr.service=bazarr"
+    restart: unless-stopped
+  pia-vpn:
+    image: itsdaspecialk/pia-openvpn
+    container_name: pia-vpn
+    devices:
+      - "/dev/net/tun"
+    volumes:
+      - "/home/davidfic/torrent-stack/auth.conf:/pia/auth.conf"
+    command:  ["--auth-user-pass", "/pia/auth.conf"]
+    cap_add:
+      - NET_ADMIN
+    dns:
+      - 209.222.18.222
+      - 209.222.18.218
+    environment:
+        - PUID=1000
+        - PGID=1000
+        - TZ=America/New_York
+        - REGION=Switzerland
+        - UMASK_SET=022
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qbittorrent-movies.rule=Host(`qbittorrent-movies`)"
+      - "traefik.http.routers.qbittorrent-movies.service=qbittorrent-movies"
+      - "traefik.http.services.qbittorrent-movies.LoadBalancer.server.Port=8099"
+      - "traefik.http.routers.qbittorrent-tv.rule=Host(`qbittorrent-tv`)"
+      - "traefik.http.routers.qbittorrent-tv.service=qbittorrent-tv"
+      - "traefik.http.services.qbittorrent-tv.LoadBalancer.server.Port=8100"
+  qbittorrent-movies:
+    image: linuxserver/qbittorrent
+    container_name: qbittorrent-movies
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - UMASK_SET=022
+      - WEBUI_PORT=8099
+    volumes:
+      - "/opt/dockerconfigs/qbittorrent-movies/config:/config"
+      - "/opt/dockerconfigs/qbittorrent-movies/downloads:/downloads"
+    network_mode: "service:pia-vpn"
+    depends_on:
+        - pia-vpn
+    restart: unless-stopped
+  qbittorrent-tv:
+    image: linuxserver/qbittorrent
+    container_name: qbittorrent-tv
+    network_mode: "service:pia-vpn"
+    depends_on:
+      - pia-vpn
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - UMASK_SET=022
+      - WEBUI_PORT=8100
+    volumes:
+      - "/opt/dockerconfigs/qbittorrent-tv/config:/config"
+      - "/opt/dockerconfigs/qbittorrent-tv/downloads:/downloads"
     restart: unless-stopped
