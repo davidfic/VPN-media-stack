@@ -14,6 +14,11 @@ Downlods are saved to their respective locaiton for either movies or tv.
 Reverse proxy to tie it all together and allow for easy access via simple DNS names. 
 Also allows access to the containers using the vpn network 
 
+## VPN Info
+
+I went with PIA for this. You can substitue other VPN system fairly easily. 
+Copy the auth.conf.example file to auth.conf and replace the values with your actual PIA credentials
+
 
 ## Additional Info
 
