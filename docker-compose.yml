@@ -85,8 +85,8 @@ services:
     image: "v2tec/watchtower"
     container_name: "watchtower"
     environment:
-        - PGID=0
-        - PUID=0
+        - PGID=1000
+        - PUID=1000
         - TZ=America/New_York
     volumes:
         - "/var/run/docker.sock:/var/run/docker.sock"
