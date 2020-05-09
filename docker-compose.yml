@@ -7,7 +7,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=America/New_Yokr
+      - TZ=America/New_York
       - UMASK_SET=022 #optional
     volumes:
       - "/var/radarr/config:/config"
