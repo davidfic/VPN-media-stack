@@ -1,4 +1,4 @@
-# Docker Compose stack for my personal containers
+# Docker Compose stack for my media station
 
 ## Torrent system
 
