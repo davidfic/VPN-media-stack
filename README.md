@@ -41,6 +41,8 @@ Monitors the docker.sock and will constantly check for updated versions of all t
 
 Will go out and find subtitles for movies and tv shows that need it
 
+### Tautulli
 
+A way to visualize who is watching, what they are watching and a good overall view of the usage of your Plex system
 
 
