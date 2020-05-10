@@ -174,3 +174,19 @@ services:
       - "/opt/dockerconfigs/qbittorrent-tv/config:/config"
       - "/opt/dockerconfigs/qbittorrent-tv/downloads:/downloads"
     restart: unless-stopped
+  tautulli:
+    image: linuxserver/tautulli
+    container_name: tautulli
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - /opt/dockerconfigs/tautulli/config:/config
+      - /opt/dockerconfigs/tautulli/logs:/logs
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tautulli.rule=Host(`tautulli`)"
+      - "traefik.http.routers.tautulli.service=tautulli"
+      - "traefik.http.services.tautulli.LoadBalancer.server.Port=8181"
