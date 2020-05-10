@@ -52,8 +52,8 @@ services:
     image: "linuxserver/sonarr"
     container_name: "sonarr"
     environment:
-       - PGID=0
-       - PUID=0
+       - PGID=1000
+       - PUID=1000
        - TZ=America/New_York
     volumes:
       - "/etc/localtime:/etc/localtime:ro"
