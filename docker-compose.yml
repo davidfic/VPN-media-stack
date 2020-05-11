@@ -25,6 +25,12 @@ services:
     command: # CLI arguments
       - --global.checkNewVersion=true
       - --entryPoints.http.address=:80
+      - --metrics=true
+      - --metrics.prometheus=true
+      - --metrics.prometheus.addServicesLabels=true
+      - --entryPoints.metrics.address=:8082
+      - --metrics.prometheus.entryPoint=metrics
+      - --metrics.prometheus.buckets=0.100000, 0.300000, 1.200000, 5.000000
       - --entryPoints.traefik.address=:8080
       - --api=true
       - --api.insecure=true
