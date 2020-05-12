@@ -13,9 +13,6 @@ services:
       - "/opt/dockerconfigs/radarr/config:/config"
       - "/opt/dockerconfigs/radarr/downloads:/downloads"
       - "/var/media/adult-movies:/movies"
-        #- "/var/radarr/config:/config"
-        #- "/var/radarr/downloads:/downloads"
-      #- "/var/media/adult-movies:/movies"
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -40,7 +37,6 @@ services:
       - --accessLog.filters.statusCodes=400-499
       - --providers.docker=true
       - --providers.docker.endpoint=unix:///var/run/docker.sock
-        #- --providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service" }}.$DOMAINNAME`)
       - --providers.docker.exposedByDefault=false
       - --providers.docker.network=t2_proxy
     ports:
@@ -62,10 +58,6 @@ services:
     volumes:
       - "/opt/dockerconfigs/sonarr/config:/config"
       - "/opt/dockerconfigs/sonarr/downloads:/downloads"
-      #- "/opt/dockerconfigs/sonarr/tv:/tv"
-      #    - "/etc/localtime:/etc/localtime:ro"
-      #- "/var/sonarr/config:/config"
-      #- "/var/sonarr/downloads:/downloads"
       - "/var/media/adult-tv:/tv"
     labels:
       - "traefik.enable=true"
@@ -146,25 +138,6 @@ services:
       - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent`)"
       - "traefik.http.routers.qbittorrent.service=qbittorrent"
       - "traefik.http.services.qbittorrent.LoadBalancer.server.Port=8100"
-        #- "traefik.http.routers.qbittorrent-tv.rule=Host(`qbittorrent-tv`)"
-        # - "traefik.http.routers.qbittorrent-tv.service=qbittorrent-tv"
-        #- "traefik.http.services.qbittorrent-tv.LoadBalancer.server.Port=8100"
-        #  qbittorrent-movies:
-        #    image: linuxserver/qbittorrent
-        #    container_name: qbittorrent-movies
-        #    environment:
-        #      - PUID=1000
-        #      - PGID=1000
-        #      - TZ=America/New_York
-        #      - UMASK_SET=022
-        #      - WEBUI_PORT=8099
-        #    volumes:
-        #      - "/opt/dockerconfigs/qbittorrent-movies/config:/config"
-        #      - "/opt/dockerconfigs/qbittorrent-movies/downloads:/downloads"
-        #    network_mode: "service:pia-vpn"
-        #    depends_on:
-        #        - pia-vpn
-        #    restart: unless-stopped
   qbittorrent:
     image: linuxserver/qbittorrent
     container_name: qbittorrent
