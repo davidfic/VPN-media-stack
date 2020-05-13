@@ -170,3 +170,18 @@ services:
       - "traefik.http.routers.tautulli.rule=Host(`tautulli`)"
       - "traefik.http.routers.tautulli.service=tautulli"
       - "traefik.http.services.tautulli.LoadBalancer.server.Port=8181"
+  ombi:
+    image: linuxserver/ombi
+    container_name: ombi
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - /opt/dockerconfigs/ombi/config:/config
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ombi.rule=Host(`ombi`)"
+      - "traefik.http.routers.ombi.service=ombi"
+      - "traefik.http.services.ombi.LoadBalancer.server.Port=3579"
+    restart: unless-stopped
