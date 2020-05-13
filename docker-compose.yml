@@ -170,3 +170,27 @@ services:
       - "traefik.http.routers.tautulli.rule=Host(`tautulli`)"
       - "traefik.http.routers.tautulli.service=tautulli"
       - "traefik.http.services.tautulli.LoadBalancer.server.Port=8181"
+  grafana:
+      container_name: grafana
+      image: grafana/grafana
+      ports:
+          - '3000:3000'
+      volumes:
+          - /opt/dockerconfigs/grafana/grafana-storage:/var/lib/grafana
+      links:
+          - influxdb
+  influxdb:
+      container_name: influxdb
+      image: influxdb:1.7.8
+      ports:
+          - "8083:8083"
+          - "8086:8086"
+      volumes:
+          - /opt/dockerconfigs/influxdb/influxdb-storage:/var/lib/influxdb
+  telegraf:
+      container_name: telegraf
+      image: telegraf:1.12.3
+      volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - /proc:/host/proc
+          - /opt/dockerconfigs/telegraf/conf/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
