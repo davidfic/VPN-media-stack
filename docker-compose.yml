@@ -12,7 +12,7 @@ services:
     volumes:
       - "/opt/dockerconfigs/radarr/config:/config"
       - "/opt/dockerconfigs/radarr/downloads:/downloads"
-      - "/var/media/adult-movies:/movies"
+      - "/var/media/movies:/movies"
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -58,7 +58,7 @@ services:
     volumes:
       - "/opt/dockerconfigs/sonarr/config:/config"
       - "/opt/dockerconfigs/sonarr/downloads:/downloads"
-      - "/var/media/adult-tv:/tv"
+      - "/var/media/tv:/tv"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sonarr.rule=Host(`sonarr`)"
