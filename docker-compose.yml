@@ -12,7 +12,7 @@ services:
     volumes:
       - "/opt/dockerconfigs/radarr/config:/config"
       - "/opt/dockerconfigs/radarr/downloads:/downloads"
-      - "/var/media/movies:/movies"
+      - "/var/media/adult-movies:/movies"
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -23,29 +23,46 @@ services:
     image: "traefik:v2.2"
     container_name: "traefik"
     command: # CLI arguments
-      - --global.checkNewVersion=true
-      - --entryPoints.http.address=:80
-      - --entryPoints.traefik.address=:8080
-      - --api=true
-      - --api.insecure=true
-      - --serversTransport.insecureSkipVerify=true
-      - --log=true
-      - --log.level=DEBUG # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
-      - --accessLog=true
-      - --accessLog.filePath=/traefik.log
-      - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
-      - --accessLog.filters.statusCodes=400-499
-      - --providers.docker=true
-      - --providers.docker.endpoint=unix:///var/run/docker.sock
-      - --providers.docker.exposedByDefault=false
-      - --providers.docker.network=t2_proxy
+      - "--global.checkNewVersion=true"
+      - "--entryPoints.http.address=:80"
+      - "--entryPoints.traefik.address=:8080"
+      - "--api=true"
+      - "--api.insecure=true"
+      - "--serversTransport.insecureSkipVerify=true"
+      - "--log=true"
+      - "--metrics=true"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.buckets=0.100000, 0.300000, 1.200000, 5.000000"
+      - "--metrics.prometheus.addEntryPointsLabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
+      - "--entryPoints.metrics.address=:8080"
+      - "--metrics.prometheus.entryPoint=metrics"
+        #     "#      - --metrics.prometheus.manualrouting=true"
+      - "--log.level=DEBUG # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC"
+      - "--accessLog=true"
+      - "--accessLog.filePath=/traefik.log"
+      - "--accessLog.bufferingSize=100" # Configuring a buffer of 100 lines
+      - "--accessLog.filters.statusCodes=400-499"
+      - "--providers.docker=true"
+      - "--providers.docker.watch"
+        #      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=t2_proxy"
     ports:
       - "80:80"
       - "8080:8080"
+      - "8088:8088"
+      - "8090:8090"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.metrics.entrypoints=http"
+      - "traefik.http.routers.metrics.rule=Path(`/metrics`)"
+      - "traefik.http.routers.metrics.service=metrics"
+        #      - "traefik.http.routers.metrics.middlewares=auth"
+        #      - "traefik.http.middlewares.auth.basicauth.users=test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/,test2:$$apr1$$d9hr9HBB$$4HxwgUir3HP4EsggP/QNo0"
+      - "traefik.http.services.metrics.loadbalancer.server.port=5443"
       - "traefik.http.routers.api.rule=Host(`monitor.example.com`)"
   sonarr:
     image: "linuxserver/sonarr"
@@ -58,7 +75,7 @@ services:
     volumes:
       - "/opt/dockerconfigs/sonarr/config:/config"
       - "/opt/dockerconfigs/sonarr/downloads:/downloads"
-      - "/var/media/tv:/tv"
+      - "/var/media/adult-tv:/tv"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sonarr.rule=Host(`sonarr`)"
@@ -184,4 +201,47 @@ services:
       - "traefik.http.routers.ombi.rule=Host(`ombi`)"
       - "traefik.http.routers.ombi.service=ombi"
       - "traefik.http.services.ombi.LoadBalancer.server.Port=3579"
+    restart: unless-stopped
+  prometheus:
+    image: prom/prometheus:v2.1.0
+    container_name: prometheus
+    user: root
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - /opt/dockerconfigs/prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    labels:
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus`)"
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.service=prometheus"
+      - "treafik.http.routers.entrypoints=prometheus"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    depends_on:
+      - prometheus
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - /opt/dockerconfigs/grafana/data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./grafana/config.monitoring
+    labels:
+      - "traefik.http.routers.grafana.rule=Host(`grafana`)"
+      - "traefik.http.routers.grafana.service=grafana"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.enable=true"
     restart: unless-stopped
